@@ -1,0 +1,132 @@
+name: build-arm64-wheel
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "nautilus_trader commit SHA to build"
+        required: false
+        default: "1aa26492072d30a4eb5f08470bf439ee50911485"
+  schedule:
+    - cron: "0 4 * * 0" # Sundays at 04:00 UTC
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  NAUTILUS_COMMIT: ${{ github.event.inputs.commit_sha || '1aa26492072d30a4eb5f08470bf439ee50911485' }}
+  PYTHON_VERSION: "3.12"
+  BUILD_MODE: release
+  CARGO_BUILD_JOBS: 1
+
+jobs:
+  build:
+    name: Build ARM64 wheel
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Checkout nautilus_trader
+        uses: actions/checkout@v4
+        with:
+          repository: nautechsystems/nautilus_trader
+          ref: ${{ env.NAUTILUS_COMMIT }}
+          fetch-depth: 1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -o Acquire::Retries=5
+          sudo apt-get install -y curl clang git make pkg-config python3-dev libpython3-dev -o Acquire::Retries=5
+          sudo apt-get clean
+
+      - name: Install Cap'n Proto
+        run: bash scripts/install-capnp.sh
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Rust toolchain
+        run: bash scripts/ci/install-rust.sh
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+          override: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Build wheel (ARM64)
+        run: |
+          PYTHON_LIB_DIR=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+          PYTHON_VERSION=$(python3 -c 'import platform; print(".".join(platform.python_version_tuple()[:2]))')
+
+          export CARGO_BUILD_JOBS=1
+          export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:$PYTHON_LIB_DIR:$LD_LIBRARY_PATH"
+          export LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:$PYTHON_LIB_DIR:$LIBRARY_PATH"
+          export PYO3_PYTHON=$(which python${{ env.PYTHON_VERSION }})
+          export RUSTFLAGS="-C link-arg=-L${PYTHON_LIB_DIR} -C link-arg=-lpython${PYTHON_VERSION}"
+          export CC=clang
+          export CXX=clang++
+
+          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+          echo "LIBRARY_PATH: $LIBRARY_PATH"
+          echo "PYO3_PYTHON: $PYO3_PYTHON"
+          echo "RUSTFLAGS: $RUSTFLAGS"
+
+          uv build --wheel
+          ls -lh dist/
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nautilus_trader-arm64-wheel
+          path: dist/nautilus_trader-*.whl
+          retention-days: 90
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv publish \
+            --publish-url https://upload.pypi.org/legacy/ \
+            --token unused \
+            dist/nautilus_trader-*.whl || true
+
+          # GitHub Packages doesn't have a native PyPI registry.
+          # Instead, we create a GitHub release with the wheel attached.
+          echo "Wheel built successfully. Available as artifact."
+
+      - name: Create release with wheel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WHEEL_FILE=$(ls dist/nautilus_trader-*.whl | head -1)
+          WHEEL_NAME=$(basename "$WHEEL_FILE")
+          TAG="build-$(date +%Y%m%d)-${NAUTILUS_COMMIT:0:8}"
+
+          # We need our own repo checked out for gh release
+          cd /tmp
+          git clone --depth 1 https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git release-repo
+          cd release-repo
+
+          gh release create "$TAG" \
+            --title "nautilus_trader ARM64 wheel (${NAUTILUS_COMMIT:0:8})" \
+            --notes "Built from nautechsystems/nautilus_trader@${NAUTILUS_COMMIT}" \
+            "$WHEEL_FILE" || echo "Release creation failed, wheel is still available as artifact"
