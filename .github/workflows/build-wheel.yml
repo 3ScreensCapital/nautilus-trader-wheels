@@ -6,7 +6,7 @@ on:
       commit_sha:
         description: "nautilus_trader commit SHA to build"
         required: false
-        default: "1aa26492072d30a4eb5f08470bf439ee50911485"
+        default: "e8e685e48b2fd47c20669ae9842dab85fba71ce7"
       architectures:
         description: "Architectures to build (arm64, x86_64, both)"
         required: false
@@ -19,7 +19,7 @@ permissions:
   packages: write
 
 env:
-  NAUTILUS_COMMIT: ${{ github.event.inputs.commit_sha || '1aa26492072d30a4eb5f08470bf439ee50911485' }}
+  NAUTILUS_COMMIT: ${{ github.event.inputs.commit_sha || 'e8e685e48b2fd47c20669ae9842dab85fba71ce7' }}
   PYTHON_VERSION: "3.12"
   BUILD_MODE: release
   CARGO_BUILD_JOBS: 1
