@@ -9,7 +9,7 @@ Building `nautilus_trader` from source takes 1-2 hours on ARM64 due to Cython + 
 ## Current Pinned Commit
 
 ```
-1aa26492072d30a4eb5f08470bf439ee50911485
+e8e685e48b2fd47c20669ae9842dab85fba71ce7
 ```
 
 (from `nautechsystems/nautilus_trader`)
