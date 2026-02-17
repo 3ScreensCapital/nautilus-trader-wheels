@@ -1,69 +1,55 @@
-# nautilus-trader-wheels
+# 🛞 nautilus-trader-wheels
 
-Pre-built `nautilus_trader` wheels for **Linux ARM64** (aarch64).
+Pre-built [`nautilus_trader`](https://github.com/nautechsystems/nautilus_trader) wheels for **Linux ARM64** and **x86_64** — skip the 1–2 hour source compile.
 
-## Why?
+| | Detail |
+|---|---|
+| **Architectures** | `aarch64`, `x86_64` |
+| **Python** | 3.12 |
+| **Build system** | Cython + Rust (PyO3) via `uv build --wheel` |
+| **Schedule** | Weekly (Sundays 04:00 UTC) + manual dispatch |
+| **Pinned commit** | [`e8e685e4`](https://github.com/nautechsystems/nautilus_trader/commit/e8e685e48b2fd47c20669ae9842dab85fba71ce7) |
 
-Building `nautilus_trader` from source takes 1-2 hours on ARM64 due to Cython + Rust compilation. This repo automates wheel builds via GitHub Actions on native ARM64 runners, so our GCP nodes can install pre-built wheels instead.
+## Install
 
-## Current Pinned Commit
-
-```
-e8e685e48b2fd47c20669ae9842dab85fba71ce7
-```
-
-(from `nautechsystems/nautilus_trader`)
-
-## How to Trigger a Build
-
-### Manual (with optional commit override)
+### From GitHub Releases (recommended)
 
 ```bash
-gh workflow run build-wheel.yml \
-  -R 3ScreensCapital/nautilus-trader-wheels \
-  -f commit_sha=<COMMIT_SHA>
-```
-
-### Automatic
-
-Runs weekly on Sundays at 04:00 UTC.
-
-## How to Consume the Wheel
-
-### Option 1: Download from GitHub Releases
-
-```bash
-# List available releases
-gh release list -R 3ScreensCapital/nautilus-trader-wheels
-
-# Download latest wheel
+# Latest wheel
 gh release download -R 3ScreensCapital/nautilus-trader-wheels -p "*.whl"
-
-# Install
 pip install nautilus_trader-*.whl
 ```
 
-### Option 2: Download from Actions Artifacts
-
-```bash
-# Find the latest run
-gh run list -R 3ScreensCapital/nautilus-trader-wheels -w build-wheel.yml
-
-# Download artifact
-gh run download <RUN_ID> -R 3ScreensCapital/nautilus-trader-wheels -n nautilus_trader-arm64-wheel
-```
-
-### Option 3: Direct URL in pip/uv
-
-Once a release exists, you can point pip at the wheel URL:
+### Direct URL
 
 ```bash
 pip install "https://github.com/3ScreensCapital/nautilus-trader-wheels/releases/download/<TAG>/nautilus_trader-<version>-cp312-cp312-linux_aarch64.whl"
 ```
 
-## Build Details
+### From Actions Artifacts
 
-- **Platform:** Linux ARM64 (ubuntu-22.04-arm runner)
-- **Python:** 3.12
-- **Build system:** Cython + Rust (PyO3) via `uv build --wheel`
-- **Build mode:** release
+```bash
+gh run list -R 3ScreensCapital/nautilus-trader-wheels -w build-wheel.yml
+gh run download <RUN_ID> -R 3ScreensCapital/nautilus-trader-wheels -n nautilus_trader-arm64-wheel
+```
+
+## Trigger a Build
+
+```bash
+# Build from pinned commit (both architectures)
+gh workflow run build-wheel.yml -R 3ScreensCapital/nautilus-trader-wheels
+
+# Build a specific commit
+gh workflow run build-wheel.yml \
+  -R 3ScreensCapital/nautilus-trader-wheels \
+  -f commit_sha=<COMMIT_SHA>
+
+# Build only one architecture
+gh workflow run build-wheel.yml \
+  -R 3ScreensCapital/nautilus-trader-wheels \
+  -f architectures=arm64
+```
+
+## Releases
+
+Wheels are published as GitHub Releases tagged `build-YYYYMMDD-<sha8>`. Artifacts are retained for 90 days.
