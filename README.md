@@ -15,15 +15,8 @@ Pre-built [`nautilus_trader`](https://github.com/nautechsystems/nautilus_trader)
 ### From GitHub Releases (recommended)
 
 ```bash
-# Latest wheel
 gh release download -R 3ScreensCapital/nautilus-trader-wheels -p "*.whl"
 pip install nautilus_trader-*.whl
-```
-
-### Direct URL
-
-```bash
-pip install "https://github.com/3ScreensCapital/nautilus-trader-wheels/releases/download/<TAG>/nautilus_trader-<version>-cp312-cp312-linux_aarch64.whl"
 ```
 
 ### From Actions Artifacts
@@ -36,15 +29,15 @@ gh run download <RUN_ID> -R 3ScreensCapital/nautilus-trader-wheels -n nautilus_t
 ## Trigger a Build
 
 ```bash
-# Build from pinned commit (both architectures)
+# Both architectures, pinned commit
 gh workflow run build-wheel.yml -R 3ScreensCapital/nautilus-trader-wheels
 
-# Build a specific commit
+# Specific commit
 gh workflow run build-wheel.yml \
   -R 3ScreensCapital/nautilus-trader-wheels \
   -f commit_sha=<COMMIT_SHA>
 
-# Build only one architecture
+# Single architecture (arm64 or x86_64)
 gh workflow run build-wheel.yml \
   -R 3ScreensCapital/nautilus-trader-wheels \
   -f architectures=arm64
