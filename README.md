@@ -23,7 +23,11 @@ pip install nautilus_trader-*.whl
 ### Direct URL
 
 ```bash
+# ARM64:
 pip install "https://github.com/3ScreensCapital/nautilus-trader-wheels/releases/download/<TAG>/nautilus_trader-<version>-cp312-cp312-linux_aarch64.whl"
+
+# x86_64:
+pip install "https://github.com/3ScreensCapital/nautilus-trader-wheels/releases/download/<TAG>/nautilus_trader-<version>-cp312-cp312-linux_x86_64.whl"
 ```
 
 ### From Actions Artifacts
@@ -31,6 +35,7 @@ pip install "https://github.com/3ScreensCapital/nautilus-trader-wheels/releases/
 ```bash
 gh run list -R 3ScreensCapital/nautilus-trader-wheels -w build-wheel.yml
 gh run download <RUN_ID> -R 3ScreensCapital/nautilus-trader-wheels -n nautilus_trader-arm64-wheel
+gh run download <RUN_ID> -R 3ScreensCapital/nautilus-trader-wheels -n nautilus_trader-x86_64-wheel
 ```
 
 ## Trigger a Build
